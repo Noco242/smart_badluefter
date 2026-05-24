@@ -12,3 +12,6 @@ lovelace-card/node_modules/
 .vscode/
 .idea/
 *.swp
+
+# Claude Code session-local config
+.claude/

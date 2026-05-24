@@ -265,9 +265,11 @@ class SmartBadlueferCard extends LitElement {
     const hass = this.hass;
     if (!hass || !cfg) return {};
     const entities = hass.entities || {};
+    const states = hass.states || {};
     const fanEntry = entities[cfg.entity];
     const deviceId = fanEntry && fanEntry.device_id;
 
+    // 1. Primary: nach unique_id auf demselben Device.
     const byUnique = (suffix) => {
       if (!deviceId) return undefined;
       for (const [eid, e] of Object.entries(entities)) {
@@ -278,17 +280,62 @@ class SmartBadlueferCard extends LitElement {
       return undefined;
     };
 
+    // 2. Fallback: Entity-ID-Pattern aus der Fan-Entity ableiten
+    // (z.B. fan.badezimmer_lufter -> number.badezimmer_lufter_ziel_luftfeuchte_tag).
+    // Akzeptiert sowohl deutsche als auch englische Übersetzungs-Slugs.
+    const fanSlug = cfg.entity.replace(/^fan\./, "");
+    const byPattern = (platform, ...candidates) => {
+      for (const suffix of candidates) {
+        const eid = `${platform}.${fanSlug}_${suffix}`;
+        if (states[eid]) return eid;
+      }
+      return undefined;
+    };
+
+    const resolve = (cfgKey, suffixUnique, platform, ...candidates) =>
+      cfg[cfgKey] || byUnique(suffixUnique) || byPattern(platform, ...candidates);
+
     return {
-      humidity_threshold: cfg.humidity_threshold_entity || byUnique("_humidity_threshold"),
-      temperature_threshold: cfg.temperature_threshold_entity || byUnique("_temperature_threshold"),
-      humidity_threshold_night: cfg.humidity_threshold_night_entity || byUnique("_humidity_threshold_night"),
-      temperature_threshold_night: cfg.temperature_threshold_night_entity || byUnique("_temperature_threshold_night"),
-      hysteresis: cfg.hysteresis_entity || byUnique("_hysteresis"),
-      auto_switch: cfg.auto_switch_entity || byUnique("_auto"),
-      mode_sensor: cfg.mode_sensor_entity || byUnique("_mode"),
-      boost_remaining: cfg.boost_remaining_entity || byUnique("_boost_remaining"),
-      sleep_start: cfg.sleep_start_entity || byUnique("_sleep_start"),
-      sleep_end: cfg.sleep_end_entity || byUnique("_sleep_end"),
+      humidity_threshold: resolve(
+        "humidity_threshold_entity", "_humidity_threshold",
+        "number", "ziel_luftfeuchte_tag", "target_humidity_day"
+      ),
+      temperature_threshold: resolve(
+        "temperature_threshold_entity", "_temperature_threshold",
+        "number", "ziel_temperatur_tag", "target_temperature_day"
+      ),
+      humidity_threshold_night: resolve(
+        "humidity_threshold_night_entity", "_humidity_threshold_night",
+        "number", "ziel_luftfeuchte_nacht", "target_humidity_night"
+      ),
+      temperature_threshold_night: resolve(
+        "temperature_threshold_night_entity", "_temperature_threshold_night",
+        "number", "ziel_temperatur_nacht", "target_temperature_night"
+      ),
+      hysteresis: resolve(
+        "hysteresis_entity", "_hysteresis",
+        "number", "hysterese", "hysteresis"
+      ),
+      auto_switch: resolve(
+        "auto_switch_entity", "_auto",
+        "switch", "automatik_aktiv", "automation_enabled"
+      ),
+      mode_sensor: resolve(
+        "mode_sensor_entity", "_mode",
+        "sensor", "modus", "mode"
+      ),
+      boost_remaining: resolve(
+        "boost_remaining_entity", "_boost_remaining",
+        "sensor", "boost_verbleibend", "boost_remaining"
+      ),
+      sleep_start: resolve(
+        "sleep_start_entity", "_sleep_start",
+        "time", "ruhephase_start", "sleep_window_start"
+      ),
+      sleep_end: resolve(
+        "sleep_end_entity", "_sleep_end",
+        "time", "ruhephase_ende", "sleep_window_end"
+      ),
     };
   }
 
@@ -316,6 +363,12 @@ class SmartBadlueferCard extends LitElement {
   _toggleAuto() {
     if (!this._resolved.auto_switch) return;
     this.hass.callService("switch", "toggle", { entity_id: this._resolved.auto_switch });
+  }
+  _toggleFan(entityId) {
+    if (!entityId) return;
+    // Domain aus der Entity-ID ableiten (switch / fan / input_boolean / light).
+    const domain = entityId.split(".", 1)[0];
+    this.hass.callService(domain, "toggle", { entity_id: entityId });
   }
   _boost(seconds, preset) {
     this.hass.callService("smart_badluefter", "boost", {
@@ -375,6 +428,11 @@ class SmartBadlueferCard extends LitElement {
     const sleepStart = this._state(this._resolved.sleep_start) || "";
     const sleepEnd = this._state(this._resolved.sleep_end) || "";
 
+    // Quell-Lüfter (direkte Hardware): kommt aus dem Fan-Attribut. Fallback
+    // erlaubt es, die Quelle per YAML zu überschreiben.
+    const sourceFanEntity = this._config.source_fan_entity || attrs.source_fan;
+    const sourceFanOn = this._state(sourceFanEntity) === "on";
+
     return html`
       <ha-card>
         <div class="header">
@@ -406,7 +464,7 @@ class SmartBadlueferCard extends LitElement {
                 <sbl-round-slider
                   min="20" max="95" step="1"
                   unit="%"
-                  label="Ziel Luftfeuchte"
+                  label="Lüfter an ab Feuchte"
                   .value=${targetHumidity}
                   .current=${typeof currentHumidity === "number" ? currentHumidity : undefined}
                   color="var(--info-color, #039be5)"
@@ -417,7 +475,7 @@ class SmartBadlueferCard extends LitElement {
                 <sbl-round-slider
                   min="10" max="40" step="0.5"
                   unit="°C"
-                  label="Ziel Temperatur"
+                  label="Lüfter an ab Temp"
                   .value=${targetTemperature}
                   .current=${typeof currentTemperature === "number" ? currentTemperature : undefined}
                   color="var(--warning-color, #ff9800)"
@@ -443,6 +501,21 @@ class SmartBadlueferCard extends LitElement {
             <ha-icon icon="mdi:auto-mode"></ha-icon>
             Auto ${autoOn ? "an" : "aus"}
           </button>
+        </div>
+
+        <div class="manual-row">
+          <button
+            class="power-toggle ${sourceFanOn ? "on" : "off"}"
+            ?disabled=${!sourceFanEntity}
+            @click=${() => this._toggleFan(sourceFanEntity)}
+            title="Lüfter manuell ${sourceFanOn ? "ausschalten" : "einschalten"}"
+          >
+            <ha-icon icon=${sourceFanOn ? "mdi:fan" : "mdi:fan-off"}></ha-icon>
+            Lüfter ${sourceFanOn ? "an" : "aus"}
+          </button>
+          ${!autoOn
+            ? html`<span class="manual-hint">Automatik ist aus - direkter Schalter</span>`
+            : html`<span class="manual-hint">Achtung: Automatik aktiv, kann gleich wieder anschalten</span>`}
         </div>
 
         ${this._config.show_boost_buttons
@@ -556,6 +629,38 @@ class SmartBadlueferCard extends LitElement {
     }
     .auto-toggle.on { background: var(--success-color, #43a047); color: white; }
 
+    .manual-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 4px;
+    }
+    .power-toggle {
+      background: var(--secondary-background-color);
+      border: none;
+      color: var(--primary-text-color);
+      border-radius: 16px;
+      padding: 8px 16px;
+      font: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      transition: background 0.15s ease;
+    }
+    .power-toggle ha-icon { --mdc-icon-size: 22px; }
+    .power-toggle.on {
+      background: var(--primary-color);
+      color: var(--text-primary-color, #fff);
+    }
+    .power-toggle.off:hover { background: var(--divider-color); }
+    .power-toggle[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .manual-hint {
+      font-size: 0.8em;
+      color: var(--secondary-text-color);
+      flex: 1;
+    }
+
     .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .action {
       background: var(--secondary-background-color); border: none; border-radius: 12px;
@@ -596,7 +701,7 @@ class SmartBadlueferCard extends LitElement {
 customElements.define("smart-badluefter-card", SmartBadlueferCard);
 
 console.info(
-  "%c SMART-BADLUEFTER-CARD %c 0.1.0 ",
+  "%c SMART-BADLUEFTER-CARD %c 0.2.0 ",
   "color: white; background: #039be5; font-weight: 700;",
   "color: #039be5; background: white; font-weight: 700;"
 );
