@@ -1,0 +1,73 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Smart Bathroom Fan",
+        "description": "Pick the fan to control and the sensors to use.",
+        "data": {
+          "name": "Name",
+          "fan_entity": "Fan entity",
+          "temperature_sensor": "Temperature sensor",
+          "humidity_sensor": "Humidity sensor"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This fan/sensor combination is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Smart Bathroom Fan options",
+        "data": {
+          "humidity_threshold": "Target humidity (day, %)",
+          "temperature_threshold": "Target temperature (day, °C)",
+          "humidity_threshold_night": "Target humidity (sleep, %)",
+          "temperature_threshold_night": "Target temperature (sleep, °C)",
+          "sleep_start": "Sleep window start",
+          "sleep_end": "Sleep window end",
+          "sleep_mode": "Behavior during sleep window",
+          "hysteresis": "Hysteresis",
+          "boost_toilet_minutes": "'Toilet' boost duration (minutes)",
+          "boost_shower_minutes": "'Shower' boost duration (minutes)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "sleep_mode": {
+      "options": {
+        "disabled": "Disable automation",
+        "thresholds": "Use different thresholds"
+      }
+    }
+  },
+  "entity": {
+    "fan": { "smart_fan": { "name": "Smart fan" } },
+    "number": {
+      "humidity_threshold": { "name": "Target humidity (day)" },
+      "temperature_threshold": { "name": "Target temperature (day)" },
+      "humidity_threshold_night": { "name": "Target humidity (night)" },
+      "temperature_threshold_night": { "name": "Target temperature (night)" },
+      "hysteresis": { "name": "Hysteresis" }
+    },
+    "switch": { "auto_enabled": { "name": "Automation enabled" } },
+    "sensor": {
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "idle": "Idle",
+          "auto": "Auto",
+          "boost": "Boost",
+          "manual": "Manual"
+        }
+      },
+      "boost_remaining": { "name": "Boost remaining" }
+    },
+    "time": {
+      "sleep_start": { "name": "Sleep window start" },
+      "sleep_end": { "name": "Sleep window end" }
+    }
+  }
+}

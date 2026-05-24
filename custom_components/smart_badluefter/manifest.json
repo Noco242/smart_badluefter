@@ -1,0 +1,13 @@
+{
+  "domain": "smart_badluefter",
+  "name": "Smart Badlüfter",
+  "version": "0.1.0",
+  "documentation": "https://github.com/yourname/smart_badluefter",
+  "issue_tracker": "https://github.com/yourname/smart_badluefter/issues",
+  "codeowners": ["@yourname"],
+  "config_flow": true,
+  "iot_class": "local_push",
+  "integration_type": "device",
+  "dependencies": [],
+  "requirements": []
+}

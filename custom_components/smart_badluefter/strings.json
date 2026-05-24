@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Smart Badlüfter einrichten",
+        "description": "Wähle den zu steuernden Lüfter und die Sensoren.",
+        "data": {
+          "name": "Name",
+          "fan_entity": "Lüfter-Entität",
+          "temperature_sensor": "Temperatursensor",
+          "humidity_sensor": "Feuchtigkeitssensor"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Diese Kombination aus Lüfter und Sensor ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Smart Badlüfter Optionen",
+        "data": {
+          "humidity_threshold": "Ziel-Luftfeuchtigkeit (Tag, %)",
+          "temperature_threshold": "Ziel-Temperatur (Tag, °C)",
+          "humidity_threshold_night": "Ziel-Luftfeuchtigkeit (Ruhephase, %)",
+          "temperature_threshold_night": "Ziel-Temperatur (Ruhephase, °C)",
+          "sleep_start": "Beginn Ruhephase",
+          "sleep_end": "Ende Ruhephase",
+          "sleep_mode": "Verhalten in Ruhephase",
+          "hysteresis": "Hysterese",
+          "boost_toilet_minutes": "Dauer 'Klo lüften' (Minuten)",
+          "boost_shower_minutes": "Dauer 'Duschen gehen' (Minuten)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "sleep_mode": {
+      "options": {
+        "disabled": "Auto deaktiviert",
+        "thresholds": "Andere Schwellenwerte"
+      }
+    }
+  },
+  "entity": {
+    "fan": {
+      "smart_fan": { "name": "Smart Lüfter" }
+    },
+    "number": {
+      "humidity_threshold": { "name": "Ziel Luftfeuchte (Tag)" },
+      "temperature_threshold": { "name": "Ziel Temperatur (Tag)" },
+      "humidity_threshold_night": { "name": "Ziel Luftfeuchte (Nacht)" },
+      "temperature_threshold_night": { "name": "Ziel Temperatur (Nacht)" },
+      "hysteresis": { "name": "Hysterese" }
+    },
+    "switch": {
+      "auto_enabled": { "name": "Automatik aktiv" }
+    },
+    "sensor": {
+      "mode": {
+        "name": "Modus",
+        "state": {
+          "idle": "Leerlauf",
+          "auto": "Automatik",
+          "boost": "Boost",
+          "manual": "Manuell"
+        }
+      },
+      "boost_remaining": { "name": "Boost verbleibend" }
+    },
+    "time": {
+      "sleep_start": { "name": "Ruhephase Start" },
+      "sleep_end": { "name": "Ruhephase Ende" }
+    }
+  }
+}

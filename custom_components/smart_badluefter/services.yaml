@@ -1,0 +1,45 @@
+boost:
+  name: Boost
+  description: Startet einen manuellen Timer-Boost und überschreibt damit die Auto-Logik.
+  fields:
+    entity_id:
+      name: Lüfter-Entität
+      description: Smart-Badlüfter Fan-Entität, die geboostet werden soll.
+      selector:
+        entity:
+          integration: smart_badluefter
+          domain: fan
+    duration:
+      name: Dauer (Sekunden)
+      required: true
+      example: 300
+      selector:
+        number:
+          min: 1
+          max: 86400
+          unit_of_measurement: s
+          mode: box
+    preset:
+      name: Preset-Bezeichnung
+      description: Optionale Bezeichnung (z.B. "toilet", "shower"), die in der UI angezeigt wird.
+      selector:
+        text:
+
+cancel_boost:
+  name: Boost beenden
+  description: Beendet einen laufenden Boost.
+  fields:
+    entity_id:
+      name: Lüfter-Entität
+      selector:
+        entity:
+          integration: smart_badluefter
+          domain: fan
+
+boost_toilet:
+  name: Klo lüften
+  description: Boost mit der konfigurierten Klo-Lüften-Dauer starten.
+
+boost_shower:
+  name: Duschen gehen
+  description: Boost mit der konfigurierten Duschen-Dauer starten.

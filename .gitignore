@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+
+# Frontend build
+lovelace-card/node_modules/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
